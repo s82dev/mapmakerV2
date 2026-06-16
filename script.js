@@ -2,7 +2,7 @@
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 const TILE=32;
 let map=null,gold=0,moving=false;
-let surfSelected=false,surfLevel=1,upgradeMenu=false,dragMode=false;
+let surfSelected=false,surfLevel=1,upgradeMenu=false;
 const player={x:0,y:0};
 const delayBase=160;
 document.getElementById("file").addEventListener("change",e=>{
@@ -16,11 +16,11 @@ function tileColor(t){return t===1?"gray":t===2?"green":t===3?"deepskyblue":"bla
 function draw(){
  if(!map)return;ctx.clearRect(0,0,640,640);
  for(let y=0;y<map.height;y++)for(let x=0;x<map.width;x++){ctx.fillStyle=tileColor(map.tiles[y][x]);ctx.fillRect(x*TILE,y*TILE,TILE,TILE);ctx.strokeRect(x*TILE,y*TILE,TILE,TILE);}
- for(const o of map.objects){if(o.type!=="chest")continue;ctx.fillStyle=o.opened?"#666":"#8B4513";ctx.fillRect(o.x*TILE+4,o.y*TILE+4,24,24);}
+ for(const o of map.objects){if(o.type!=="chest")continue;ctx.fillStyle=o.opened?"#666":"#8B4513";ctx.fillRect(o.x*TILE+4,o.y*TILE+4,24,24);if(!o.opened){ctx.fillStyle="gold";ctx.fillRect(o.x*TILE+8,o.y*TILE+8,16,5);}}
  if(surfSelected){ctx.fillStyle="deepskyblue";ctx.beginPath();ctx.moveTo(player.x*TILE+16,player.y*TILE+2);ctx.lineTo(player.x*TILE+30,player.y*TILE+30);ctx.lineTo(player.x*TILE+2,player.y*TILE+30);ctx.closePath();ctx.fill();}
  ctx.fillStyle="yellow";ctx.beginPath();ctx.arc(player.x*TILE+16,player.y*TILE+16,surfSelected?7:10,0,6.28);ctx.fill();
  let info=document.getElementById("info"); if(!info){info=document.createElement("div");info.id="info";document.body.appendChild(info);}
- info.innerHTML=`Gold:${gold}<br>Surf Lv.${surfLevel} ${surfSelected?"(AN)":"(AUS)"}<br>Drag:${dragMode?"AN":"AUS"}${upgradeMenu?"<br><b>Upgrade: U (44 Gold), ESC schließen</b>":""}`;
+ info.innerHTML=`Gold:${gold}<br>Surf Lv.${surfLevel} ${surfSelected?"(AN)":"(AUS)"}${upgradeMenu?"<br><b>Upgrade: U (44 Gold), ESC schließen</b>":""}`;
 }
 async function move(dx,dy){
  if(!map||moving)return;
@@ -40,7 +40,6 @@ document.addEventListener("keydown",e=>{
  let k=e.key.toLowerCase();
  if(k==="m"){upgradeMenu=!upgradeMenu;draw();return;}
  if(k==="escape"){upgradeMenu=false;draw();return;}
- if(k==="g"){dragMode=!dragMode;draw();return;}
  if(k==="u"&&upgradeMenu&&gold>=44&&surfLevel<5){gold-=44;surfLevel++;draw();return;}
  if(k==="1"){
    if(map&&map.tiles[player.y][player.x]===3&&surfSelected)return;
