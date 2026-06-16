@@ -7,6 +7,7 @@ let moving=false;
 const player={x:0,y:0};
 let surfSelected=false;
 let surfLevel=1;
+let upgradeOpen=false;
 
 document.getElementById("file").addEventListener("change",e=>{
  const f=e.target.files[0]; if(!f)return;
@@ -38,6 +39,7 @@ function draw(){
  if(surfSelected){ctx.fillStyle="deepskyblue";ctx.beginPath();ctx.moveTo(player.x*TILE+16,player.y*TILE+2);ctx.lineTo(player.x*TILE+30,player.y*TILE+30);ctx.lineTo(player.x*TILE+2,player.y*TILE+30);ctx.closePath();ctx.fill();ctx.fillStyle="yellow";ctx.beginPath();ctx.arc(player.x*TILE+16,player.y*TILE+16,7,0,Math.PI*2);ctx.fill();}else{ctx.fillStyle="yellow";ctx.beginPath();ctx.arc(player.x*TILE+16,player.y*TILE+16,10,0,Math.PI*2);ctx.fill();}
  document.getElementById("surfItem").textContent=`[1] ${surfSelected?"🟦":"⬜"} Surfbrett Lv.${surfLevel}`;
  document.getElementById("gold").textContent=gold;
+ if(upgradeOpen){ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(120,140,400,220);ctx.fillStyle='white';ctx.font='20px sans-serif';ctx.fillText('Surfbrett Upgrade',180,180);ctx.fillText('Level: '+surfLevel,180,220);ctx.fillText('Kosten: 44 Gold',180,255);ctx.fillText('U = Upgrade | ESC = Schließen',180,290);ctx.fillText('Jedes Level: +2% Wasser-Speed',180,325);}
 }
 
 function reward(){
@@ -57,17 +59,21 @@ async function move(dx,dy){
  if(nx>=0&&ny>=0&&nx<map.width&&ny<map.height&&(tile===2||(tile===3&&surfSelected))){
    player.x=nx; player.y=ny; draw();
  }
- await new Promise(r=>setTimeout(r,160));
+ const base=160;
+ const delay=(tile===3&&surfSelected)?Math.max(40,Math.round(base*(1-0.02*(surfLevel-1)))):Math.round(base*1.25);
+ await new Promise(r=>setTimeout(r,delay));
  moving=false;
 }
 
 document.addEventListener("keydown",e=>{
+ if(upgradeOpen){const k=e.key.toLowerCase(); if(k==="escape"){upgradeOpen=false;draw();return;} if(k==="u"){if(surfLevel<5 && gold>=44){gold-=44;surfLevel++;} draw();return;}}
  const k=e.key.toLowerCase();
  if(k==="w")move(0,-1);
  else if(k==="s")move(0,1);
  else if(k==="a")move(-1,0);
  else if(k==="d")move(1,0);
  else if(k==="1"){surfSelected=!surfSelected;draw();}
+ else if(k==="m"){upgradeOpen=true;draw();}
  else if(k==="e"&&map){
    for(const o of map.objects){
      if(o.type==="chest"&&!o.opened&&Math.abs(o.x-player.x)+Math.abs(o.y-player.y)===1){
