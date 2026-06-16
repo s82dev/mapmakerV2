@@ -46,10 +46,15 @@ document.addEventListener("keydown",e=>{
    surfSelected=!surfSelected;draw();return;
  }
  if(k==="w")move(0,-1); else if(k==="s")move(0,1); else if(k==="a")move(-1,0); else if(k==="d")move(1,0);
-});
-canvas.addEventListener("mousedown",e=>{
- if(!dragMode||!map)return;
- const x=Math.floor(e.offsetX/TILE),y=Math.floor(e.offsetY/TILE);
- const c=map.objects.find(o=>o.type==="chest"&&o.x===x&&o.y===y);
- if(c){c.x=Math.max(1,Math.min(map.width-2,c.x+1));draw();}
+
+ if(k==="e"&&map){
+   for(const o of map.objects){
+     if(o.type==="chest"&&!o.opened&&Math.abs(o.x-player.x)+Math.abs(o.y-player.y)===1){
+       o.opened=true;
+       const r=Math.random();
+       let g=r<0.45?1+Math.floor(Math.random()*5):r<0.75?6+Math.floor(Math.random()*5):r<0.93?11+Math.floor(Math.random()*10):r<0.99?21+Math.floor(Math.random()*8):29+Math.floor(Math.random()*5);
+       gold+=g;draw();break;
+     }
+   }
+ }
 });
