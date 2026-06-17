@@ -10,9 +10,6 @@ let moving=false;
 const player={x:0,y:0};
 let surfSelected=false;
 let surfLevel=1;
-let surfMoving=false;
-let surfDX=0;
-let surfDY=0;
 
 document.getElementById("file").addEventListener("change",e=>{
  const f=e.target.files[0];
@@ -106,32 +103,47 @@ function reward(){
 
 async function move(dx,dy){
  if(!map||moving)return;
- const nx=player.x+dx, ny=player.y+dy;
+
+ const nx=player.x+dx;
+ const ny=player.y+dy;
  if(nx<0||ny<0||nx>=map.width||ny>=map.height)return;
+
  const current=map.tiles[player.y][player.x];
  const next=map.tiles[ny][nx];
+
  moving=true;
+
  if(current===2){
-   if(next===2&&!surfSelected){player.x=nx;player.y=ny;}
-   else if(next===3&&surfSelected){player.x=nx;player.y=ny;surfMoving=true;surfDX=dx;surfDY=dy;}
+   if(next===2 && !surfSelected){
+      player.x=nx;
+      player.y=ny;
+   }else if(next===3 && surfSelected){
+      player.x=nx;
+      player.y=ny;
+   }
  }else if(current===3){
-   if(next===3){player.x=nx;player.y=ny;}
-   else if(next===2){player.x=nx;player.y=ny;surfSelected=false;surfMoving=false;}
+   if(next===3){
+      player.x=nx;
+      player.y=ny;
+   }else if(next===2){
+      player.x=nx;
+      player.y=ny;
+      surfSelected=false;
+   }
  }
+
  draw();
+ await new Promise(r=>setTimeout(r,160));
  moving=false;
- if(surfMoving && map.tiles[player.y][player.x]===3){
-   setTimeout(()=>move(surfDX,surfDY),160);
- }
 }
 
 document.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
 
- if(k==="w"){surfDX=0;surfDY=-1;move(0,-1);}
- else if(k==="s"){surfDX=0;surfDY=1;move(0,1);}
- else if(k==="a"){surfDX=-1;surfDY=0;move(-1,0);}
- else if(k==="d"){surfDX=1;surfDY=0;move(1,0);}
+ if(k==="w")move(0,-1);
+ else if(k==="s")move(0,1);
+ else if(k==="a")move(-1,0);
+ else if(k==="d")move(1,0);
  else if(k==="1"){
    if(!map)return;
    if(map.tiles[player.y][player.x]!==2)return;
