@@ -14,68 +14,39 @@ let surfLevel=1;
 document.getElementById("file").addEventListener("change",e=>{
  const f=e.target.files[0];
  if(!f)return;
-
  const r=new FileReader();
-
  r.onload=()=>{
    map=JSON.parse(r.result);
-
    map.objects??=[];
-
    for(const o of map.objects){
       if(o.type==="chest") o.opened??=false;
    }
-
    if(map.spawn){
       player.x=map.spawn.x;
       player.y=map.spawn.y;
-   }else{
-      for(let y=0;y<map.height;y++){
-         for(let x=0;x<map.width;x++){
-            if(map.tiles[y][x]===2){
-               player.x=x;
-               player.y=y;
-               y=map.height;
-               break;
-            }
-         }
-      }
    }
-
    draw();
  };
-
  r.readAsText(f);
 });
 
 function draw(){
  if(!map)return;
-
  ctx.clearRect(0,0,640,640);
 
- let camX=player.x-Math.floor(VIEW_W/2);
- let camY=player.y-Math.floor(VIEW_H/2);
-
- camX=Math.max(0,Math.min(camX,map.width-VIEW_W));
- camY=Math.max(0,Math.min(camY,map.height-VIEW_H));
+ let camX=Math.max(0,Math.min(player.x-10,map.width-VIEW_W));
+ let camY=Math.max(0,Math.min(player.y-10,map.height-VIEW_H));
 
  for(let y=0;y<VIEW_H;y++){
    for(let x=0;x<VIEW_W;x++){
-
-      const mx=camX+x;
-      const my=camY+y;
-
-      if(mx<0||my<0||mx>=map.width||my>=map.height)continue;
-
-      const t=map.tiles[my][mx];
-
-      switch(t){
-         case 1:ctx.fillStyle="gray";break;
-         case 2:ctx.fillStyle="#4caf50";break;
-         case 3:ctx.fillStyle="#2196f3";break;
-         default:ctx.fillStyle="black";
+      const mx=camX+x,my=camY+y;
+      if(mx>=map.width||my>=map.height)continue;
+      switch(map.tiles[my][mx]){
+        case 1:ctx.fillStyle="gray";break;
+        case 2:ctx.fillStyle="#4caf50";break;
+        case 3:ctx.fillStyle="#2196f3";break;
+        default:ctx.fillStyle="black";
       }
-
       ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
       ctx.strokeRect(x*TILE,y*TILE,TILE,TILE);
    }
@@ -83,15 +54,11 @@ function draw(){
 
  for(const o of map.objects){
    if(o.type!=="chest")continue;
-
    const sx=(o.x-camX)*TILE;
    const sy=(o.y-camY)*TILE;
-
    if(sx<0||sy<0||sx>=640||sy>=640)continue;
-
    ctx.fillStyle=o.opened?"#666":"#8B4513";
    ctx.fillRect(sx+4,sy+4,24,24);
-
    if(!o.opened){
       ctx.fillStyle="gold";
       ctx.fillRect(sx+8,sy+8,16,5);
@@ -109,7 +76,6 @@ function draw(){
    ctx.lineTo(px+2,py+30);
    ctx.closePath();
    ctx.fill();
-
    ctx.fillStyle="yellow";
    ctx.beginPath();
    ctx.arc(px+16,py+16,7,0,Math.PI*2);
@@ -123,9 +89,7 @@ function draw(){
 
  document.getElementById("inventory").innerHTML=`<h2>🎒 Inventar</h2>
 <p>🪙 Gold: <b>${gold}</b></p>
-<p>🏄 Surfbrett: <b>Lv.${surfLevel}/5</b> ${surfSelected?"✅":"❌"}</p>
-<p><b>[1]</b> Surfbrett ${surfSelected?"ausgewählt":"nicht ausgewählt"}</p>
-<p><b>E</b> Truhe öffnen</p>`;
+<p>🏄 Surfbrett: <b>Lv.${surfLevel}/5</b> ${surfSelected?"✅":"❌"}</p>`;
 }
 
 function reward(){
@@ -142,19 +106,33 @@ async function move(dx,dy){
 
  const nx=player.x+dx;
  const ny=player.y+dy;
-
  if(nx<0||ny<0||nx>=map.width||ny>=map.height)return;
 
- const tile=map.tiles[ny][nx];
+ const current=map.tiles[player.y][player.x];
+ const next=map.tiles[ny][nx];
 
  moving=true;
 
- if(tile===2||(tile===3&&surfSelected)){
-   player.x=nx;
-   player.y=ny;
-   draw();
+ if(current===2){
+   if(next===2 && !surfSelected){
+      player.x=nx;
+      player.y=ny;
+   }else if(next===3 && surfSelected){
+      player.x=nx;
+      player.y=ny;
+   }
+ }else if(current===3){
+   if(next===3){
+      player.x=nx;
+      player.y=ny;
+   }else if(next===2){
+      player.x=nx;
+      player.y=ny;
+      surfSelected=false;
+   }
  }
 
+ draw();
  await new Promise(r=>setTimeout(r,160));
  moving=false;
 }
@@ -167,8 +145,19 @@ document.addEventListener("keydown",e=>{
  else if(k==="a")move(-1,0);
  else if(k==="d")move(1,0);
  else if(k==="1"){
-   surfSelected=!surfSelected;
-   draw();
+   if(!map)return;
+   if(map.tiles[player.y][player.x]!==2)return;
+
+   const nearWater=
+      (player.y>0&&map.tiles[player.y-1][player.x]===3)||
+      (player.y<map.height-1&&map.tiles[player.y+1][player.x]===3)||
+      (player.x>0&&map.tiles[player.y][player.x-1]===3)||
+      (player.x<map.width-1&&map.tiles[player.y][player.x+1]===3);
+
+   if(nearWater){
+      surfSelected=true;
+      draw();
+   }
  }
  else if(k==="e"&&map){
    for(const o of map.objects){
