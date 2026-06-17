@@ -10,6 +10,8 @@ let moving=false;
 const player={x:0,y:0};
 let surfSelected=false;
 let surfLevel=1;
+let surfDir={x:0,y:0};
+let surfLoop=false;
 
 document.getElementById("file").addEventListener("change",e=>{
  const f=e.target.files[0];
@@ -103,47 +105,66 @@ function reward(){
 
 async function move(dx,dy){
  if(!map||moving)return;
-
  const nx=player.x+dx;
  const ny=player.y+dy;
  if(nx<0||ny<0||nx>=map.width||ny>=map.height)return;
-
  const current=map.tiles[player.y][player.x];
  const next=map.tiles[ny][nx];
-
  moving=true;
-
  if(current===2){
    if(next===2 && !surfSelected){
-      player.x=nx;
-      player.y=ny;
+      player.x=nx; player.y=ny;
    }else if(next===3 && surfSelected){
-      player.x=nx;
-      player.y=ny;
+      player.x=nx; player.y=ny;
+      surfDir={x:dx,y:dy};
+      if(!surfLoop){ surfLoop=true; autoSurf(); }
    }
  }else if(current===3){
    if(next===3){
-      player.x=nx;
-      player.y=ny;
+      player.x=nx; player.y=ny;
+      surfDir={x:dx,y:dy};
    }else if(next===2){
-      player.x=nx;
-      player.y=ny;
+      player.x=nx; player.y=ny;
       surfSelected=false;
+      surfLoop=false;
+      surfDir={x:0,y:0};
    }
  }
-
  draw();
  await new Promise(r=>setTimeout(r,160));
  moving=false;
 }
 
+async function autoSurf(){
+ while(surfLoop && surfSelected && map && map.tiles[player.y][player.x]===3){
+   await new Promise(r=>setTimeout(r,180));
+   if(moving) continue;
+   const nx=player.x+surfDir.x;
+   const ny=player.y+surfDir.y;
+   if(nx<0||ny<0||nx>=map.width||ny>=map.height) break;
+   const t=map.tiles[ny][nx];
+   if(t===3){
+      player.x=nx; player.y=ny;
+      draw();
+   }else if(t===2){
+      player.x=nx; player.y=ny;
+      surfSelected=false;
+      surfLoop=false;
+      draw();
+      break;
+   }else{
+      break;
+   }
+ }
+}
+
 document.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
 
- if(k==="w")move(0,-1);
- else if(k==="s")move(0,1);
- else if(k==="a")move(-1,0);
- else if(k==="d")move(1,0);
+ if(k==="w"){surfDir={x:0,y:-1};move(0,-1);}
+ else if(k==="s"){surfDir={x:0,y:1};move(0,1);}
+ else if(k==="a"){surfDir={x:-1,y:0};move(-1,0);}
+ else if(k==="d"){surfDir={x:1,y:0};move(1,0);}
  else if(k==="1"){
    if(!map)return;
    if(map.tiles[player.y][player.x]!==2)return;
