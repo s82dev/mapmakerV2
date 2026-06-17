@@ -15,7 +15,26 @@ document.getElementById("file").addEventListener("change",e=>{
    map=JSON.parse(r.result);
    map.objects??=[];
    for(const o of map.objects) if(o.type==="chest") o.opened??=false;
-   for(let y=0;y<map.height;y++)for(let x=0;x<map.width;x++)if(map.tiles[y][x]===2){player.x=x;player.y=y;draw();return;}
+
+   // Spawn aus der Map laden
+   if(map.spawn){
+      player.x=map.spawn.x;
+      player.y=map.spawn.y;
+      draw();
+      return;
+   }
+
+   // Fallback: erste Tile 2
+   for(let y=0;y<map.height;y++){
+      for(let x=0;x<map.width;x++){
+         if(map.tiles[y][x]===2){
+            player.x=x;
+            player.y=y;
+            draw();
+            return;
+         }
+      }
+   }
  };
  r.readAsText(f);
 });
@@ -35,7 +54,24 @@ function draw(){
    ctx.fillRect(o.x*TILE+4,o.y*TILE+4,24,24);
    if(!o.opened){ctx.fillStyle="gold";ctx.fillRect(o.x*TILE+8,o.y*TILE+8,16,5);}
  }
- if(surfSelected){ctx.fillStyle="deepskyblue";ctx.beginPath();ctx.moveTo(player.x*TILE+16,player.y*TILE+2);ctx.lineTo(player.x*TILE+30,player.y*TILE+30);ctx.lineTo(player.x*TILE+2,player.y*TILE+30);ctx.closePath();ctx.fill();ctx.fillStyle="yellow";ctx.beginPath();ctx.arc(player.x*TILE+16,player.y*TILE+16,7,0,Math.PI*2);ctx.fill();}else{ctx.fillStyle="yellow";ctx.beginPath();ctx.arc(player.x*TILE+16,player.y*TILE+16,10,0,Math.PI*2);ctx.fill();}
+ if(surfSelected){
+   ctx.fillStyle="deepskyblue";
+   ctx.beginPath();
+   ctx.moveTo(player.x*TILE+16,player.y*TILE+2);
+   ctx.lineTo(player.x*TILE+30,player.y*TILE+30);
+   ctx.lineTo(player.x*TILE+2,player.y*TILE+30);
+   ctx.closePath();
+   ctx.fill();
+   ctx.fillStyle="yellow";
+   ctx.beginPath();
+   ctx.arc(player.x*TILE+16,player.y*TILE+16,7,0,Math.PI*2);
+   ctx.fill();
+ }else{
+   ctx.fillStyle="yellow";
+   ctx.beginPath();
+   ctx.arc(player.x*TILE+16,player.y*TILE+16,10,0,Math.PI*2);
+   ctx.fill();
+ }
  document.getElementById("inventory").innerHTML=`<h2>🎒 Inventar</h2>
 <p>🪙 Gold: <b>${gold}</b></p>
 <p>🏄 Surfbrett: <b>Lv.${surfLevel}/5</b> ${surfSelected?"✅":"❌"}</p>
@@ -58,7 +94,9 @@ async function move(dx,dy){
  const nx=player.x+dx, ny=player.y+dy;
  const tile=map.tiles[ny][nx];
  if(nx>=0&&ny>=0&&nx<map.width&&ny<map.height&&(tile===2||(tile===3&&surfSelected))){
-   player.x=nx; player.y=ny; draw();
+   player.x=nx;
+   player.y=ny;
+   draw();
  }
  await new Promise(r=>setTimeout(r,160));
  moving=false;
@@ -70,7 +108,10 @@ document.addEventListener("keydown",e=>{
  else if(k==="s")move(0,1);
  else if(k==="a")move(-1,0);
  else if(k==="d")move(1,0);
- else if(k==="1"){surfSelected=!surfSelected;draw();}
+ else if(k==="1"){
+   surfSelected=!surfSelected;
+   draw();
+ }
  else if(k==="e"&&map){
    for(const o of map.objects){
      if(o.type==="chest"&&!o.opened&&Math.abs(o.x-player.x)+Math.abs(o.y-player.y)===1){
