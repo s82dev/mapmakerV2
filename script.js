@@ -113,6 +113,10 @@ function draw(){
                     ctx.fillStyle="#2196f3";
                     break;
 
+                case 4:
+                    ctx.fillStyle="#b000ff";
+                    break;
+
                 default:
                     ctx.fillStyle="black";
             }
@@ -192,6 +196,17 @@ function reward(){
     return 29+Math.floor(Math.random()*5);
 
 }
+
+function teleportPlayer(){
+    if(!map||!map.teleports)return;
+    const tp=map.teleports.find(t=>t.x===player.x&&t.y===player.y);
+    if(!tp)return;
+    const other=map.teleports.find(t=>t.id===tp.id&&(t.x!==tp.x||t.y!==tp.y));
+    if(!other)return;
+    player.x=other.x;
+    player.y=other.y;
+}
+
 async function move(dx,dy){
 
     if(!map)return;
@@ -216,10 +231,11 @@ async function move(dx,dy){
     if(current===2){
 
         // normales Laufen
-        if(next===2 && !surfSelected){
+        if((next===2 || next===4) && !surfSelected){
 
             player.x=nx;
             player.y=ny;
+            teleportPlayer();
 
         }
 
@@ -228,6 +244,7 @@ async function move(dx,dy){
 
             player.x=nx;
             player.y=ny;
+            teleportPlayer();
 
             surfing=true;
 
@@ -247,6 +264,7 @@ async function move(dx,dy){
 
             player.x=nx;
             player.y=ny;
+            teleportPlayer();
 
             surfDX=dx;
             surfDY=dy;
@@ -254,10 +272,11 @@ async function move(dx,dy){
         }
 
         // Wasser verlassen
-        else if(next===2){
+        else if(next===2 || next===4){
 
             player.x=nx;
             player.y=ny;
+            teleportPlayer();
 
             surfing=false;
             surfSelected=false;
